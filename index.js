@@ -181,11 +181,11 @@ class CipherForge {
   _calculateLengthScore(password) {
     // Constants for minimum and maximum password lengths
     const minLength = 8;
-    const maxLength = 20;
+    const maxLength = 30;
 
     const length = password.length;
     if (length < minLength) return 0;
-    if (length > maxLength) return 50;
+    if (length > maxLength) return 100;
     return ((length - minLength) / (maxLength - minLength)) * 50 + 25;
   }
 
@@ -203,20 +203,29 @@ class CipherForge {
       /\d/,
       /\W/,
     ];
-
+  
     let diversityScore = characterSets.reduce((score, set) => {
       return score + (set.test(password) ? 25 : 0);
     }, 0);
-
-    // Check for number or letter sequences and penalize
-    const hasNumberSequence = /\d{3}/.test(password);
-    const hasLetterSequence = /abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz/i.test(password);
-    if (hasNumberSequence || hasLetterSequence) {
+  
+    // Check for repetitive number or letter sequences and penalize
+    const hasRepetitiveSequence = /(\w)\1{2,}/.test(password);
+    if (hasRepetitiveSequence) {
       diversityScore = 0;
     }
-
+  
+    // Check for consecutive sequences of at least 3 letters
+    const hasConsecutiveLetterSequence = /[a-zA-Z]{3,}/.test(password);
+    if (hasConsecutiveLetterSequence) {
+      diversityScore += 25;
+    }
+  
+    // Ensure the diversity score is capped at 100
+    diversityScore = Math.min(diversityScore, 100);
+  
     return diversityScore;
   }
+  
 
   /**
    * Calculate the special characters score for a password.
@@ -225,10 +234,20 @@ class CipherForge {
    * @returns {number} - Special characters score for the password.
    */
   _calculateSpecialCharactersScore(password) {
-    // Regular expression for detecting special characters
+    // Regular expressions for detecting different types of special characters
     const specialCharacters = /[!@#$%^&*()_+\-=\[\]{}|;':",.<>\/?]+/;
+    
+    // Count the total number of characters and the number of special characters
+    const totalCharacters = password.length;
+    const specialCharactersCount = (password.match(specialCharacters) || []).length;
+    
+    // Calculate the percentage of special characters
+    const percentageSpecialCharacters = (specialCharactersCount / totalCharacters) * 100;
   
-    return specialCharacters.test(password) ? 25 + 25 : 0;
+    // Ensure the percentage score is capped at 100
+    const specialCharactersScore = Math.min(percentageSpecialCharacters, 100) * 100;
+  
+    return specialCharactersScore;
   }
 
   /**
@@ -259,7 +278,7 @@ class CipherForge {
     });
 
     // Calculate the percentage of words present in the password
-    const percentage = (wordsPresentInString / wordsInDictionary.length) * 100 || 100;
+    const percentage = ((wordsPresentInString / wordsInDictionary.length) * 100 || 100);
     return percentage;
   }
 }

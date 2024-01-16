@@ -157,7 +157,7 @@ class CipherForge {
     const dictionaryScore = parseFloat(this._calculateDictionaryScore(password).toFixed(2));
 
     // Calculate the total score
-    const totalScore = parseFloat((lengthScore * 0.33) + (diversityScore * 0.33) + (specialCharactersScore * 0.33) + (dictionaryScore * 0.33).toFixed(2));
+    const totalScore = parseFloat(((lengthScore * 0.25) + (diversityScore * 0.25) + (specialCharactersScore * 0.25) + (dictionaryScore * 0.25)).toFixed(2));
 
     // Return the security assessment
     return {

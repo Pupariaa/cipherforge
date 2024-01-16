@@ -12,7 +12,7 @@ CipherCraft
 ## Getting Started
 ### Installation
 ```bash
-npm install cipherforge`
+npm install cipherforge
 ```
 
 ### Importing 

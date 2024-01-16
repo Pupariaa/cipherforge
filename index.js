@@ -112,7 +112,7 @@ class CipherCraft {
 class CipherForge {
   constructor() {
     // Define the path to the dictionary file
-    this.dictionaryFilePath = 'psw.txt';
+    this.dictionaryFilePath = path.join(require.main.path, 'node_modules', 'cipherforge', 'psw.txt');
     // Load the dictionary from the file into a Set
     this.dictionary = new Set(this.loadDictionary());
   }

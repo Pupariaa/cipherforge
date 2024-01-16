@@ -110,49 +110,58 @@ class CipherCraft {
 }
 
 class CipherForge {
+  /**
+   * Constructor for the CipherForge class.
+   */
   constructor() {
-    // Define the path to the dictionary file
-    this.dictionaryFilePath = path.join(require.main.path, 'node_modules', 'cipherforge', 'psw.txt');
-    // Load the dictionary from the file into a Set
-    this.dictionary = new Set(this.loadDictionary());
+    // Path to the dictionary file
+    this.dictionaryFilePath = path.join(__dirname, 'psw.txt');
+    // Load the dictionary from the file
+    this.dictionary = this.loadDictionary();
   }
 
   /**
-   * Loads the dictionary from the file.
+   * Load the dictionary from the file.
    *
-   * @returns {Array} - Array of dictionary words.
+   * @returns {string} - Loaded dictionary as a string.
    */
   loadDictionary() {
     try {
-      // Read the file synchronously and split words based on newline characters
+      // Read the file synchronously and process the data
       const data = fs.readFileSync(this.dictionaryFilePath, 'utf-8');
-      return data.split(/\r?\n/).filter(word => word.trim() !== '');
+      // Split the data into an array of words, trim whitespace, and remove empty words
+      const wordsArray = data.split(/\r?\n/).map(word => word.trim()).filter(word => word !== '');
+      // Convert the array of words back to a string
+      const wordsString = wordsArray.join(',');
+
+      return wordsString;
+
     } catch (error) {
-      // Handle errors during file reading
-      console.error(`Error reading file ${this.dictionaryFilePath}: ${error.message}`);
-      return [];
+      // Handle errors during dictionary loading
+      console.error(`Error reading the file ${this.dictionaryFilePath}: ${error.message}`);
+      return '';
     }
   }
 
   /**
-   * Tests the security of a password based on various criteria.
+   * Test the security of a given password.
    *
    * @param {string} password - Password to test.
-   * @returns {Object} - Object containing security information.
+   * @returns {Object} - Security assessment result.
    */
   Test(password) {
     // Calculate individual scores
-    const lengthScore = this.calculateLengthScore(password);
-    const diversityScore = this.calculateDiversityScore(password);
-    const specialCharactersScore = this.calculateSpecialCharactersScore(password);
-    const dictionaryScore = this.calculateDictionaryScore(password);
+    const lengthScore = parseFloat(this._calculateLengthScore(password).toFixed(2));
+    const diversityScore = parseFloat(this._calculateDiversityScore(password).toFixed(2));
+    const specialCharactersScore = parseFloat(this._calculateSpecialCharactersScore(password).toFixed(2));
+    const dictionaryScore = parseFloat(this._calculateDictionaryScore(password).toFixed(2));
 
-    // Calculate total score
-    const totalScore = lengthScore + diversityScore + specialCharactersScore + dictionaryScore;
+    // Calculate the total score
+    const totalScore = parseFloat((lengthScore * 0.33) + (diversityScore * 0.33) + (specialCharactersScore * 0.33) + (dictionaryScore * 0.33).toFixed(2));
 
-    // Return security information
+    // Return the security assessment
     return {
-      isSecure: totalScore >= 75,
+      isSecure: totalScore >= 52,
       totalScore,
       details: {
         lengthScore,
@@ -164,32 +173,30 @@ class CipherForge {
   }
 
   /**
-   * Calculates the length score of a password.
+   * Calculate the length score for a password.
    *
-   * @param {string} password - Password to evaluate.
-   * @returns {number} - Length score.
+   * @param {string} password - Password to calculate the length score for.
+   * @returns {number} - Length score for the password.
    */
-  calculateLengthScore(password) {
-    // Define minimum and maximum password lengths
+  _calculateLengthScore(password) {
+    // Constants for minimum and maximum password lengths
     const minLength = 8;
     const maxLength = 20;
 
     const length = password.length;
     if (length < minLength) return 0;
     if (length > maxLength) return 50;
-
-    // Calculate and return the length score
-    return ((length - minLength) / (maxLength - minLength)) * 50;
+    return ((length - minLength) / (maxLength - minLength)) * 50 + 25;
   }
 
   /**
-   * Calculates the diversity score of a password.
+   * Calculate the diversity score for a password.
    *
-   * @param {string} password - Password to evaluate.
-   * @returns {number} - Diversity score.
+   * @param {string} password - Password to calculate the diversity score for.
+   * @returns {number} - Diversity score for the password.
    */
-  calculateDiversityScore(password) {
-    // Define character sets to check for diversity
+  _calculateDiversityScore(password) {
+    // Character sets representing lowercase letters, uppercase letters, digits, and special characters
     const characterSets = [
       /[a-z]/,
       /[A-Z]/,
@@ -197,42 +204,63 @@ class CipherForge {
       /\W/,
     ];
 
-    // Calculate diversity score based on character sets
-    const diversityScore = characterSets.reduce((score, set) => {
+    let diversityScore = characterSets.reduce((score, set) => {
       return score + (set.test(password) ? 25 : 0);
     }, 0);
+
+    // Check for number or letter sequences and penalize
+    const hasNumberSequence = /\d{3}/.test(password);
+    const hasLetterSequence = /abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz/i.test(password);
+    if (hasNumberSequence || hasLetterSequence) {
+      diversityScore = 0;
+    }
 
     return diversityScore;
   }
 
   /**
-   * Calculates the score for the presence of special characters in a password.
+   * Calculate the special characters score for a password.
    *
-   * @param {string} password - Password to evaluate.
-   * @returns {number} - Special characters score.
+   * @param {string} password - Password to calculate the special characters score for.
+   * @returns {number} - Special characters score for the password.
    */
-  calculateSpecialCharactersScore(password) {
-    // Define a regular expression for special characters
+  _calculateSpecialCharactersScore(password) {
+    // Regular expression for detecting special characters
     const specialCharacters = /[!@#$%^&*()_+\-=\[\]{}|;':",.<>\/?]+/;
-    return specialCharacters.test(password) ? 25 : 0;
+  
+    return specialCharacters.test(password) ? 25 + 25 : 0;
   }
 
   /**
-   * Calculates the dictionary score of a password.
+   * Calculate the dictionary score for a password.
    *
-   * @param {string} password - Password to evaluate.
-   * @returns {number} - Dictionary score.
+   * @param {string} password - Password to calculate the dictionary score for.
+   * @returns {number} - Dictionary score for the password.
    */
-  calculateDictionaryScore(password) {
-    // Convert the password to lowercase for case-insensitive comparison
-    const lowercasePassword = password.toLowerCase();
-    // Split the password into words using non-word characters
-    const wordsInPassword = lowercasePassword.split(/\W+/);
-    // Filter matching words from the dictionary
-    const matchingWords = wordsInPassword.filter(word => this.dictionary.has(word));
-    // Calculate and return the dictionary score
-    const dictionaryScore = Math.max(0, 50 - matchingWords.length * 10);
-    return dictionaryScore;
+  _calculateDictionaryScore(password) {
+    // Normalize the password and obtain words from the dictionary
+    const normalizedPassword = password.replace(/\s+/g, '').toLowerCase();
+    const wordsInDictionary = this.dictionary
+        .toLowerCase()
+        .match(/\b\w+\b/g);
+
+    if (!wordsInDictionary || wordsInDictionary.length === 0) {
+        return 100; 
+    }
+
+    let wordsPresentInString = 0;
+
+    wordsInDictionary.forEach(word => {
+      // Create a regular expression for exact word match
+      const regex = new RegExp(`\\b${word}\\b`);
+      if (regex.test(normalizedPassword)) {
+        wordsPresentInString++;
+      }
+    });
+
+    // Calculate the percentage of words present in the password
+    const percentage = (wordsPresentInString / wordsInDictionary.length) * 100 || 100;
+    return percentage;
   }
 }
 

@@ -1,0 +1,25 @@
+{
+  "name": "cipherforge",
+  "version": "1.0.0",
+  "description": "Simple generation package and password test",
+  "main": "index.js*",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pass",
+    "password",
+    "generate",
+    "test",
+    "security",
+    "sécurité",
+    "motdepasse",
+    "passe",
+    "teste*"
+  ],
+  "author": "pupariadev",
+  "license": "MIT",
+  "dependencies": {
+    "fs": "^0.0.1-security"
+  }
+}

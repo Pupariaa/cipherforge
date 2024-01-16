@@ -1,4 +1,6 @@
 # Cipher Forge Librairy Documentation
+[![npm version](https://img.shields.io/npm/v/cipherforge)]([https://www.npmjs.com/package/cipherforge](https://www.npmjs.com/package/cipherforge))
+[![Downloads](https://img.shields.io/npm/dt/cipherforge)]([https://www.npmjs.com/package/cipherforge)
 ## Introduction
 The Cipher Forge library is designed to provide functionality for password and cryptographic key generation, along with security testing features.
 

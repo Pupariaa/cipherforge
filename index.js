@@ -1,5 +1,5 @@
 const fs = require('fs'); // Import the 'fs' module for file operations
-
+const psw = require('./psw.js')
 class CipherCraft {
   constructor() {
     // Define character sets
@@ -53,7 +53,7 @@ class CipherCraft {
   BasicPassword(charset, length) {
     let password = '';
     for (let i = 0; i < length; i++) {
-      const randomIndex = this.getRandomInt(charset.length);
+      const randomIndex = this.RandInt(charset.length);
       password += charset[randomIndex];
     }
     return password;
@@ -110,39 +110,6 @@ class CipherCraft {
 }
 
 class CipherForge {
-  /**
-   * Constructor for the CipherForge class.
-   */
-  constructor() {
-    // Path to the dictionary file
-    this.dictionaryFilePath = path.join(__dirname, 'psw.txt');
-    // Load the dictionary from the file
-    this.dictionary = this.loadDictionary();
-  }
-
-  /**
-   * Load the dictionary from the file.
-   *
-   * @returns {string} - Loaded dictionary as a string.
-   */
-  loadDictionary() {
-    try {
-      // Read the file synchronously and process the data
-      const data = fs.readFileSync(this.dictionaryFilePath, 'utf-8');
-      // Split the data into an array of words, trim whitespace, and remove empty words
-      const wordsArray = data.split(/\r?\n/).map(word => word.trim()).filter(word => word !== '');
-      // Convert the array of words back to a string
-      const wordsString = wordsArray.join(',');
-
-      return wordsString;
-
-    } catch (error) {
-      // Handle errors during dictionary loading
-      console.error(`Error reading the file ${this.dictionaryFilePath}: ${error.message}`);
-      return '';
-    }
-  }
-
   /**
    * Test the security of a given password.
    *
@@ -205,7 +172,7 @@ class CipherForge {
     ];
   
     let diversityScore = characterSets.reduce((score, set) => {
-      return score + (set.test(password) ? 25 : 0);
+      return score + (set.test(password) ? 50 : 0);
     }, 0);
   
     // Check for repetitive number or letter sequences and penalize
@@ -217,7 +184,7 @@ class CipherForge {
     // Check for consecutive sequences of at least 3 letters
     const hasConsecutiveLetterSequence = /[a-zA-Z]{3,}/.test(password);
     if (hasConsecutiveLetterSequence) {
-      diversityScore += 25;
+      diversityScore += 50;
     }
   
     // Ensure the diversity score is capped at 100
@@ -234,19 +201,30 @@ class CipherForge {
    * @returns {number} - Special characters score for the password.
    */
   _calculateSpecialCharactersScore(password) {
-    // Regular expressions for detecting different types of special characters
-    const specialCharacters = /[!@#$%^&*()_+\-=\[\]{}|;':",.<>\/?]+/;
-    
+    // Regular expression to match any special character
+    const specialCharactersRegex = /[^a-zA-Z0-9]/;
+  
     // Count the total number of characters and the number of special characters
     const totalCharacters = password.length;
-    const specialCharactersCount = (password.match(specialCharacters) || []).length;
-    
-    // Calculate the percentage of special characters
+    let specialCharactersCount = 0;
+  
+    // Iterate through each character in the password
+    for (let i = 0; i < totalCharacters; i++) {
+      const currentChar = password[i];
+  
+      // Check if the current character is a special character
+      if (specialCharactersRegex.test(currentChar)) {
+        specialCharactersCount++;
+      }
+    }
+  
+    // Calculate the percentage of special characters in the password
     const percentageSpecialCharacters = (specialCharactersCount / totalCharacters) * 100;
   
-    // Ensure the percentage score is capped at 100
-    const specialCharactersScore = Math.min(percentageSpecialCharacters, 100) * 100;
+    // Ensure the score is not greater than 100%
+    const specialCharactersScore = Math.min(percentageSpecialCharacters, 100);
   
+    console.log(`Special Characters Score: ${specialCharactersScore}`);
     return specialCharactersScore;
   }
 
@@ -258,28 +236,31 @@ class CipherForge {
    */
   _calculateDictionaryScore(password) {
     // Normalize the password and obtain words from the dictionary
-    const normalizedPassword = password.replace(/\s+/g, '').toLowerCase();
-    const wordsInDictionary = this.dictionary
-        .toLowerCase()
-        .match(/\b\w+\b/g);
-
-    if (!wordsInDictionary || wordsInDictionary.length === 0) {
-        return 100; 
-    }
-
-    let wordsPresentInString = 0;
-
-    wordsInDictionary.forEach(word => {
-      // Create a regular expression for exact word match
-      const regex = new RegExp(`\\b${word}\\b`);
-      if (regex.test(normalizedPassword)) {
-        wordsPresentInString++;
+    let characterCountInDictionary = 0;
+    let uniqueWordsInPassword = [];
+  
+    // Iterate through each word in the password
+    for (let i = 0; i < psw.pwd.length; i++) {
+      const word = psw.pwd[i];
+      const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+  
+      // Check if the word is alphanumeric
+      if (alphanumericRegex.test(word)) {
+        // Create a regex to match the whole word in the password
+        const regex = new RegExp('\\b(' + word + ')\\b', 'g');
+        let matches = password.match(regex);
+  
+        // Check if there are matches and the word is not already in the uniqueWords array
+        if (matches && !uniqueWordsInPassword.includes(word)) {
+          uniqueWordsInPassword.push(word);
+          characterCountInDictionary += word.length;
+        }
       }
-    });
+    }
+    // Calculate the password score as the percentage of characters not in the dictionary
+    const score = 100 - ((characterCountInDictionary / password.length) * 100);
+    return score;
 
-    // Calculate the percentage of words present in the password
-    const percentage = ((wordsPresentInString / wordsInDictionary.length) * 100 || 100);
-    return percentage;
   }
 }
 
